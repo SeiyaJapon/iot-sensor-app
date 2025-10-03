@@ -1,0 +1,56 @@
+# ----------------------------------------------------------------------
+# 1. BINARIOS Y EJECUTABLES DE GO
+# ----------------------------------------------------------------------
+# Binario de la aplicación generado por 'go build' o el Makefile
+sensor-app
+*.exe
+*.dll
+*.so
+
+# Directorios generados
+# Se ignora la carpeta 'vendor' si se usa 'go mod vendor'
+vendor/
+
+# ----------------------------------------------------------------------
+# 2. CACHÉ Y METADATOS DE GO
+# ----------------------------------------------------------------------
+# Go toolchain cache
+/pkg/
+/.cache/
+
+# Caché de pruebas generadas automáticamente
+# Ignora archivos temporales y datos de profiling
+*.test
+*.out
+
+# Cobertura de tests (generado por el Makefile)
+coverage.out
+coverage.html
+
+# ----------------------------------------------------------------------
+# 3. DOCKER Y ARCHIVOS DE INFRAESTRUCTURA
+# ----------------------------------------------------------------------
+# Ignora cualquier imagen de Docker si se exporta
+*.tar
+*.iso
+
+# Ignora los logs de docker-compose si se redirigen
+docker-compose.log
+
+# ----------------------------------------------------------------------
+# 4. ENTORNO Y EDITOR/IDE
+# ----------------------------------------------------------------------
+# Archivos de entorno secretos (MUY IMPORTANTE)
+.env
+.env.*
+config/local.env
+
+# Directorios de IDEs comunes
+.idea/
+*.sublime-workspace
+
+# Archivos temporales de sistemas operativos
+*~
+*.swp
+.DS_Store
+Thumbs.db
