@@ -18,3 +18,13 @@ type DeviceRepository interface {
 	FindAll() ([]*Device, error)
 	Update(device *Device) error
 }
+
+type ReadingsRepository interface {
+	FindBySensorId(sensorID SensorID, limit int) ([]SensorReading, error)
+}
+
+type SimulatorRepository interface {
+	Start(sensorID SensorID) error
+	Stop(sensorID SensorID) error
+	InjectError(sensorID SensorID) error
+}
