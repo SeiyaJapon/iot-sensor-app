@@ -3,10 +3,10 @@ package application
 import "github.com/SeiyaJapon/iot-sensor-app/internal/iotcontext/domain"
 
 type ReadingsUsecase struct {
-	readingsRepo domain.ReadingsRepository
+	readingsRepo domain.SensorReadingRepository
 }
 
-func NewReadingsUsecase(readingsRepo domain.ReadingsRepository) *ReadingsUsecase {
+func NewReadingsUsecase(readingsRepo domain.SensorReadingRepository) *ReadingsUsecase {
 	return &ReadingsUsecase{
 		readingsRepo: readingsRepo,
 	}
@@ -17,7 +17,7 @@ func (uc *ReadingsUsecase) GetPaginatedReadings(id domain.SensorID, from int, to
 		return nil, domain.ErrInvalidPaginationParams
 	}
 
-	readings, err := uc.readingsRepo.FindBySensorId(id, limit)
+	readings, err := uc.readingsRepo.FindBySensorID(id, limit)
 	if err != nil {
 		return nil, err
 	}

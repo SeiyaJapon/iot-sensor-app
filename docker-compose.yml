@@ -1,13 +1,13 @@
-version: '3.8'
-
 services:
   nats:
     image: nats:2.9.20-alpine3.18
     container_name: nats-server
     ports:
-      - "4222:4222" # Puerto del cliente
-      - "8222:8222" # Puerto de monitoreo/HTTP
+      - "4222:4222"
+      - "8222:8222"
     command: -js
+    networks:
+      - iot-net
 
   postgres:
     image: postgres:15-alpine
@@ -18,9 +18,31 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: iot_db
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - iot-net
+
+  sensor-app:
+    build: .
+    container_name: sensor-app
+    depends_on:
+      - nats
+      - postgres
+    environment:
+      - POSTGRES_DSN=host=postgres user=user password=password dbname=iot_db port=5432 sslmode=disable
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - iot-net
 
 volumes:
   postgres-data:
+
+networks:
+  iot-net:
+    driver: bridge

@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type SensorReading struct {
-	ID        int64                  `json:"id"`
+	ID        string                 `json:"id"`
 	SensorID  SensorID               `json:"sensor_id"`
 	DeviceID  DeviceID               `json:"device_id"`
 	Type      SensorType             `json:"type"`
@@ -19,7 +19,7 @@ func NewSensorReading(sensorID SensorID, deviceID DeviceID, typ SensorType, valu
 		DeviceID:  deviceID,
 		Type:      typ,
 		Value:     value,
-		Unit:      unit,
+		Unit:      string(typ),
 		Timestamp: ts.UTC(),
 		Meta:      map[string]interface{}{},
 	}

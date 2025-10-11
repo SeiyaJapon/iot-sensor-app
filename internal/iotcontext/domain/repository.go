@@ -8,19 +8,15 @@ type SensorRepository interface {
 }
 
 type SensorReadingRepository interface {
-	Save(reading SensorReading) error
-	FindBySensor(sensorID SensorID, limit int) ([]SensorReading, error)
+	Save(reading *SensorReading) error
+	FindBySensorID(sensorID SensorID, limit int) ([]SensorReading, error)
 }
 
 type DeviceRepository interface {
 	Save(device *Device) error
-	FindByID(id DeviceID) (*Device, error)
-	FindAll() ([]*Device, error)
+	FindByID(id DeviceID) (Device, error)
+	FindAll() ([]Device, error)
 	Update(device *Device) error
-}
-
-type ReadingsRepository interface {
-	FindBySensorId(sensorID SensorID, limit int) ([]SensorReading, error)
 }
 
 type SimulatorRepository interface {

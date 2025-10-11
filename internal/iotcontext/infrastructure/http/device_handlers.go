@@ -18,7 +18,22 @@ func NewDeviceHandlers(deviceUseCase application.DeviceUseCase) *DeviceHandlers 
 	}
 }
 
-func (h *DeviceHandlers) All(w http.ResponseWriter, r *http.Request) {
+func (dh *DeviceHandlers) DevicesHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		if r.URL.Path == "/devices" {
+			dh.All(w)
+		} else {
+			dh.GetByID(w, r)
+		}
+	case http.MethodPost:
+		dh.Create(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *DeviceHandlers) All(w http.ResponseWriter) {
 	devices, err := h.deviceUseCase.GetAllDevices()
 	if err != nil {
 		http.Error(w, "Failed to retrieve devices", http.StatusInternalServerError)

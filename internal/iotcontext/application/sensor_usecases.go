@@ -1,14 +1,21 @@
 package application
 
-import "github.com/SeiyaJapon/iot-sensor-app/internal/iotcontext/domain"
+import (
+	"github.com/SeiyaJapon/iot-sensor-app/internal/iotcontext/domain"
+	domain_metrics "github.com/SeiyaJapon/iot-sensor-app/internal/metricscontext/domain"
+)
 
 type SensorUseCase struct {
-	sensorRepo domain.SensorRepository
+	sensorRepo     domain.SensorRepository
+	metrics        domain_metrics.Metrics
+	eventPublisher domain.EventPublisher
 }
 
-func NewSensorUseCase(sensorRepo domain.SensorRepository) *SensorUseCase {
+func NewSensorUseCase(sensorRepo domain.SensorRepository, metrics domain_metrics.Metrics, publisher domain.EventPublisher) *SensorUseCase {
 	return &SensorUseCase{
-		sensorRepo: sensorRepo,
+		sensorRepo:     sensorRepo,
+		metrics:        metrics,
+		eventPublisher: publisher,
 	}
 }
 
@@ -21,17 +28,34 @@ func (uc *SensorUseCase) CreateSensor(
 ) error {
 	sensor, err := domain.NewSensor(id, deviceID, name, typ, config)
 	if err != nil {
+		uc.metrics.IncSensorError(typ, deviceID)
 		return err
 	}
 
 	if err := uc.sensorRepo.Save(sensor); err != nil {
+		uc.metrics.IncSensorError(typ, deviceID)
 		return err
 	}
-	return nil
+
+	uc.metrics.IncSensorReading(typ, deviceID)
+
+	event := &domain.SensorCreatedEvent{
+		SensorID: id,
+		DeviceID: deviceID,
+		Type:     typ,
+		Name:     name,
+	}
+
+	return uc.eventPublisher.Publish(event.ToDomainEvent())
 }
 
 func (uc *SensorUseCase) GetSensorByID(id domain.SensorID) (*domain.Sensor, error) {
-	return uc.sensorRepo.FindByID(id)
+	sensor, err := uc.sensorRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return sensor, nil
 }
 
 func (uc *SensorUseCase) GetAllSensors() ([]*domain.Sensor, error) {
@@ -45,12 +69,21 @@ func (uc *SensorUseCase) UpdateSensorConfigById(id domain.SensorID, config domai
 	}
 
 	if err := sensor.UpdateConfig(config); err != nil {
+		uc.metrics.IncSensorError(sensor.Type, sensor.DeviceID)
 		return err
 	}
 
 	if err := uc.sensorRepo.Update(sensor); err != nil {
+		uc.metrics.IncSensorError(sensor.Type, sensor.DeviceID)
 		return err
 	}
 
-	return nil
+	uc.metrics.IncSensorReading(sensor.Type, sensor.DeviceID)
+
+	event := &domain.SensorConfigUpdatedEvent{
+		SensorID: id,
+		Config:   config,
+	}
+
+	return uc.eventPublisher.Publish(event.ToDomainEvent())
 }
