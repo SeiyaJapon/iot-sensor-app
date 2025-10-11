@@ -2,51 +2,107 @@
 
 Una aplicación **Golang** completa para la gestión de dispositivos IoT con múltiples sensores, implementando arquitectura hexagonal y mensajería NATS.
 
-## 📋 Descripción del Proyecto
+## 📋 ¿Qué hace la aplicación?
 
-Este proyecto implementa un sistema de gestión de sensores IoT que permite:
+Este sistema simula un **ecosistema IoT completo** donde múltiples sensores conectados a dispositivos generan lecturas de datos en tiempo real. La aplicación permite:
 
-- **Registro y configuración** de sensores de diferentes tipos (temperatura, humedad, presión)
-- **Simulación de lecturas** periódicas con parámetros configurables
-- **Mensajería asíncrona** mediante NATS para eventos del sistema
-- **Persistencia de datos** en PostgreSQL
-- **API REST** para gestión completa del sistema
-- **Métricas y monitoreo** con Prometheus
+### 🎯 Funcionalidades Principales
+
+- **Gestión de Dispositivos IoT**: Registro y administración de dispositivos que contienen sensores
+- **Configuración de Sensores**: Creación y configuración de sensores de diferentes tipos (temperatura, humedad, presión)
+- **Simulación en Tiempo Real**: Generación automática de lecturas de sensores con parámetros configurables
+- **Mensajería Asíncrona**: Comunicación de eventos mediante NATS para escalabilidad
+- **Persistencia de Datos**: Almacenamiento de lecturas y configuraciones en PostgreSQL
+- **Monitoreo y Métricas**: Sistema de métricas con Prometheus para observabilidad
+- **API REST Completa**: Endpoints para gestión completa del sistema
+
+### 🔬 Tipos de Sensores Soportados
+
+- **🌡️ Temperatura**: Lecturas en °C (rango: 20-80°C)
+- **💧 Humedad**: Lecturas en % (rango: 0-100%)
+- **🌬️ Presión**: Lecturas en hPa (rango: 900-1100 hPa)
+- **🔧 Genérico**: Sensores personalizables
 
 ## 🏗️ Arquitectura del Sistema
 
-El proyecto sigue los principios de **Arquitectura Hexagonal (Clean Architecture)** con una clara separación de responsabilidades:
+### Principios de Diseño
+
+El proyecto implementa **Arquitectura Hexagonal (Clean Architecture)** con separación clara de responsabilidades:
+
+- **Domain Layer**: Entidades puras sin dependencias externas
+- **Application Layer**: Casos de uso y lógica de negocio
+- **Infrastructure Layer**: Implementaciones concretas (HTTP, DB, NATS)
 
 ### Estructura de Directorios
 
 ```
 em3world/
 ├── cmd/                          # Punto de entrada de la aplicación
-│   ├── app/                      # Container de dependencias
+│   ├── app/                      # Container de dependencias (DI)
 │   └── server/                   # Servidor HTTP principal
 ├── internal/
 │   ├── iotcontext/              # Contexto de negocio IoT
-│   │   ├── application/         # Casos de uso
+│   │   ├── application/         # Casos de uso (Use Cases)
+│   │   │   ├── device_usecases.go
+│   │   │   ├── sensor_usecases.go
+│   │   │   ├── readings_usecase.go
+│   │   │   └── simulator_usecase.go
 │   │   ├── domain/              # Entidades y reglas de negocio
+│   │   │   ├── device.go
+│   │   │   ├── sensor.go
+│   │   │   ├── sensor_reading.go
+│   │   │   ├── sensor_config.go
+│   │   │   └── thresholds.go
 │   │   └── infrastructure/      # Implementaciones concretas
-│   │       ├── http/            # Handlers HTTP
+│   │       ├── http/            # Handlers HTTP REST
 │   │       └── persistence/     # Repositorios y DB
 │   ├── metricscontext/          # Contexto de métricas
+│   │   └── infrastructure/
+│   │       ├── events/          # Publisher NATS
+│   │       ├── http/            # Handler métricas
+│   │       └── persistence/     # Métricas Prometheus
 │   └── routes.go                # Configuración de rutas
-├── config/                      # Scripts de inicialización
+├── config/                      # Scripts de inicialización DB
 └── docker-compose.yml           # Infraestructura local
 ```
 
-## 🔧 Tecnologías Utilizadas
+### Flujo de Datos
 
-- **Go 1.24.5** - Lenguaje principal
-- **NATS** - Sistema de mensajería
-- **PostgreSQL** - Base de datos
-- **GORM** - ORM para Go
-- **Prometheus** - Métricas y monitoreo
-- **Docker** - Containerización
+1. **Cliente HTTP** → **Handlers** → **Use Cases** → **Domain Entities**
+2. **Use Cases** → **Repositories** → **PostgreSQL**
+3. **Use Cases** → **Event Publisher** → **NATS** → **Subscribers**
+4. **Simulator** → **Generate Readings** → **Save to DB** → **Publish Events**
 
-## 🚀 Instalación y Configuración
+## 🔧 Tecnologías y Componentes
+
+### Stack Tecnológico
+
+- **Go 1.24.5** - Lenguaje principal con concurrencia nativa
+- **NATS** - Sistema de mensajería asíncrona para eventos
+- **PostgreSQL 15** - Base de datos relacional para persistencia
+- **GORM** - ORM para mapeo objeto-relacional
+- **Prometheus** - Sistema de métricas y monitoreo
+- **Docker & Docker Compose** - Containerización y orquestación
+
+### Componentes del Sistema
+
+#### 🗄️ Base de Datos (PostgreSQL)
+- **device_models**: Información de dispositivos IoT
+- **sensor_models**: Configuración de sensores
+- **sensor_readings_models**: Lecturas históricas de sensores
+
+#### 📡 Mensajería (NATS)
+- **sensor.created**: Evento cuando se crea un sensor
+- **sensor.config.updated**: Evento cuando se actualiza configuración
+- **sensor.reading.published**: Evento cuando se genera una lectura
+- **simulator.started/stopped**: Eventos del simulador
+
+#### 📊 Métricas (Prometheus)
+- **sensor_readings_total**: Contador de lecturas generadas
+- **sensor_errors_total**: Contador de errores de sensores
+- **active_sensors**: Gauge de sensores activos
+
+## 🚀 Cómo Ejecutar la Aplicación
 
 ### ⚡ Inicio Rápido
 
@@ -61,155 +117,9 @@ make start-docker
 # 3. ¡Listo! La app está en http://localhost:8080
 ```
 
-### Prerrequisitos
+### 🔧 Comandos Disponibles
 
-- Go 1.24.5 o superior
-- Docker y Docker Compose
-- Git
-
-### Configuración Local
-
-1. **Clonar el repositorio:**
-```bash
-git clone <repository-url>
-cd em3world
-```
-
-2. **Opción A - Infraestructura + App en Docker (Recomendado):**
-```bash
-make start-docker
-```
-
-3. **Opción B - Infraestructura en Docker + App local:**
-```bash
-make start-local
-# Luego ejecutar: ./sensor-app
-# O directamente: make run-local
-```
-
-### Variables de Entorno
-
-Crea un archivo `.env` en la raíz del proyecto:
-
-```env
-POSTGRES_DSN=host=localhost user=user password=password dbname=iot_db port=55432 sslmode=disable
-NATS_URL=nats://localhost:4222
-```
-
-## 📊 API Endpoints
-
-### Sensores
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/sensors` | Obtener todos los sensores |
-| `GET` | `/sensors?id={id}` | Obtener sensor por ID |
-| `POST` | `/sensors` | Crear nuevo sensor |
-| `PUT` | `/sensors?id={id}` | Actualizar configuración |
-
-### Simulador
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/simulator/?sensor_id={id}&action=start` | Iniciar simulación |
-| `POST` | `/simulator/?sensor_id={id}&action=stop` | Detener simulación |
-| `POST` | `/simulator/?sensor_id={id}&action=inject_error` | Inyectar error |
-
-### Otros
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/metrics` | Métricas Prometheus |
-
-## 🔄 Flujo de Datos
-
-### Diagrama de Arquitectura
-
-```mermaid
-graph TD
-    subgraph "HTTP Handlers (Infra)"
-        A[POST /sensors] --> B[SensorHandlers]
-        C[PUT /sensors/{id}/config] --> B
-        D[POST /simulator/{id}/control] --> E[SimulatorHandlers]
-        F[GET /sensors] --> B
-    end
-
-    subgraph "Application (Usecases)"
-        B --> G[SensorUseCase]
-        E --> H[SimulatorUseCase]
-    end
-
-    subgraph "Domain"
-        G --> I[Sensor Entity]
-        G --> J[EventPublisher Interface]
-        H --> K[SimulatorRepository Interface]
-        J --> L[SensorsCreatedEvent]
-    end
-
-    subgraph "Infrastructure"
-        subgraph "Persistence (Postgres)"
-            I --> M[SensorRepository Impl]
-            K --> N[SimulatorRepo Impl (Ticker + Rand)]
-        end
-        subgraph "NATS"
-            J --> O[NatsPublisher Impl]
-            L --> P[Publish to "sensor.created"]
-            N --> Q[Publish Reading Events]
-        end
-    end
-
-    subgraph "External"
-        M --> R[Postgres DB]
-        O --> S[NATS Server]
-    end
-
-    style A fill:#e1f5fe
-    style D fill:#f3e5f5
-    style R fill:#e8f5e8
-    style S fill:#fff3e0
-```
-
-## 🧪 Testing
-
-### Ejecutar Tests
-
-```bash
-# Ejecutar todos los tests con cobertura automática
-make test
-
-# El comando anterior genera automáticamente:
-# - coverage.out (archivo de cobertura)
-# - coverage.html (reporte visual)
-```
-
-### Cobertura de Código
-
-El proyecto incluye tests unitarios para:
-- ✅ Casos de uso de sensores
-- ✅ Repositorios de persistencia
-- ✅ Handlers HTTP
-- ✅ Simulador de sensores
-
-## 📈 Monitoreo y Métricas
-
-### Prometheus Metrics
-
-El sistema expone métricas en `/metrics`:
-
-- `sensor_readings_total` - Total de lecturas generadas
-- `sensor_errors_total` - Total de errores de sensores
-- `active_sensors` - Sensores activos actualmente
-
-### Health Checks
-
-- **Endpoint:** `GET /health`
-- **Respuesta:** `200 OK` si el sistema está funcionando
-
-## 🔧 Comandos Make
-
-### 🚀 Comandos Principales
-
+#### Comandos Principales
 ```bash
 # Iniciar todo el stack (infra + app en Docker)
 make start-docker
@@ -227,8 +137,7 @@ make build
 make test
 ```
 
-### 🏗️ Infraestructura
-
+#### Infraestructura
 ```bash
 # Levantar solo infraestructura (NATS + PostgreSQL)
 make infra
@@ -243,8 +152,7 @@ make docker-build
 make docker-run
 ```
 
-### 🧹 Limpieza
-
+#### Limpieza
 ```bash
 # Limpiar archivos generados
 make clean
@@ -256,8 +164,7 @@ make nuke
 make restart-all
 ```
 
-### 🔍 Debug y Desarrollo
-
+#### Debug y Desarrollo
 ```bash
 # Entrar en contenedor NATS
 make exec-nats
@@ -269,121 +176,368 @@ make exec-postgres
 make exec-app
 ```
 
-## 📝 Ejemplos de Uso
+### 📋 Prerrequisitos
 
-### Crear un Sensor
+- Go 1.24.5 o superior
+- Docker y Docker Compose
+- Git
+
+### ⚙️ Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto:
+
+```env
+POSTGRES_DSN=host=localhost user=user password=password dbname=iot_db port=55432 sslmode=disable
+NATS_URL=nats://localhost:4222
+```
+
+## 📡 API REST - Endpoints Disponibles
+
+### 🏠 Dispositivos IoT
+
+| Método | Endpoint | Descripción | Parámetros |
+|--------|----------|-------------|------------|
+| `GET` | `/devices` | Listar todos los dispositivos | - |
+| `POST` | `/devices` | Crear nuevo dispositivo | `name`, `type` |
+| `GET` | `/devices?id={id}` | Obtener dispositivo por ID | `id` |
+| `PUT` | `/devices` | Actualizar dispositivo | `id`, `name`, `type` |
+
+### 🌡️ Sensores
+
+| Método | Endpoint | Descripción | Parámetros |
+|--------|----------|-------------|------------|
+| `GET` | `/sensors` | Listar todos los sensores | - |
+| `POST` | `/sensors` | Crear nuevo sensor | `name`, `type`, `device_id`, `config` |
+| `GET` | `/sensors?id={id}` | Obtener sensor por ID | `id` |
+| `PUT` | `/sensors?id={id}` | Actualizar configuración | `id`, `config` |
+
+### 📊 Lecturas de Sensores
+
+| Método | Endpoint | Descripción | Parámetros |
+|--------|----------|-------------|------------|
+| `GET` | `/readings` | Obtener lecturas paginadas | `sensor_id`, `from`, `to`, `limit` |
+
+### 🎮 Simulador de Sensores
+
+| Método | Endpoint | Descripción | Parámetros |
+|--------|----------|-------------|------------|
+| `POST` | `/simulator/` | Controlar simulación | `sensor_id`, `action` |
+
+**Acciones disponibles:**
+- `start` - Iniciar simulación
+- `stop` - Detener simulación  
+- `inject_error` - Inyectar error de lectura
+
+### 🔍 Monitoreo y Salud
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check del sistema |
+| `GET` | `/metrics` | Métricas Prometheus |
+
+## 🎯 Cómo Simular Sensores
+
+### 1. Crear un Dispositivo IoT
 
 ```bash
+curl -X POST http://localhost:8080/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Casa Inteligente",
+    "type": "smart_hub"
+  }'
+```
+
+### 2. Crear Sensores en el Dispositivo
+
+```bash
+# Sensor de Temperatura
 curl -X POST http://localhost:8080/sensors \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Sensor Temperatura",
+    "name": "Sensor Temperatura Sala",
     "type": "temperature",
-    "device_id": "device-123",
+    "device_id": "device-uuid-here",
     "config": {
       "sampling_rate_ms": 1000,
+      "error_rate": 0.05,
+      "enabled": true,
+      "thresholds": {
+        "min": 18.0,
+        "max": 25.0
+      }
+    }
+  }'
+
+# Sensor de Humedad
+curl -X POST http://localhost:8080/sensors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Sensor Humedad Cocina",
+    "type": "humidity",
+    "device_id": "device-uuid-here",
+    "config": {
+      "sampling_rate_ms": 2000,
       "error_rate": 0.1,
       "enabled": true,
       "thresholds": {
-        "min": 0,
-        "max": 50
+        "min": 30.0,
+        "max": 70.0
       }
     }
   }'
 ```
 
-### Iniciar Simulación
+### 3. Iniciar Simulación de Sensores
 
 ```bash
-curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-123&action=start"
+# Iniciar simulación del sensor de temperatura
+curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-uuid-here&action=start"
+
+# Inyectar error de lectura (para testing)
+curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-uuid-here&action=inject_error"
+
+# Detener simulación
+curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-uuid-here&action=stop"
 ```
 
-### Obtener Lecturas
+### 4. Consultar Lecturas Generadas
 
 ```bash
-curl -X GET "http://localhost:8080/readings?sensor_id=sensor-123"
+# Obtener últimas 10 lecturas
+curl "http://localhost:8080/readings?sensor_id=sensor-uuid-here&from=0&to=10&limit=10"
+
+# Obtener lecturas paginadas
+curl "http://localhost:8080/readings?sensor_id=sensor-uuid-here&from=5&to=15&limit=10"
 ```
 
-## 🏛️ Principios de Diseño
+## 📈 Monitoreo y Métricas
 
-### Arquitectura Hexagonal
+### Métricas Prometheus
 
-- **Domain Layer:** Entidades puras sin dependencias externas
-- **Application Layer:** Casos de uso y lógica de negocio
-- **Infrastructure Layer:** Implementaciones concretas (HTTP, DB, NATS)
+Accede a las métricas en `http://localhost:8080/metrics`:
 
-### Patrones Implementados
+```bash
+# Ver métricas del sistema
+curl http://localhost:8080/metrics
+```
 
-- **Repository Pattern:** Abstracción de persistencia
-- **Use Case Pattern:** Encapsulación de lógica de negocio
-- **Event-Driven Architecture:** Comunicación asíncrona
-- **Dependency Injection:** Inversión de dependencias
+**Métricas disponibles:**
+- `sensor_readings_total{sensor_type, device_id}` - Total de lecturas generadas
+- `sensor_errors_total{sensor_type, device_id}` - Total de errores de sensores
+- `active_sensors` - Número de sensores activos actualmente
+
+### Health Check
+
+```bash
+# Verificar estado del sistema
+curl http://localhost:8080/health
+```
+
+## 🔧 Ejemplos de Uso Completos
+
+### Escenario 1: Monitoreo de Invernadero
+
+```bash
+# 1. Crear dispositivo invernadero
+curl -X POST http://localhost:8080/devices \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Invernadero Principal", "type": "greenhouse"}'
+
+# 2. Crear sensores ambientales
+curl -X POST http://localhost:8080/sensors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Temperatura Ambiente",
+    "type": "temperature",
+    "device_id": "device-id",
+    "config": {
+      "sampling_rate_ms": 5000,
+      "error_rate": 0.02,
+      "enabled": true,
+      "thresholds": {"min": 15.0, "max": 30.0}
+    }
+  }'
+
+# 3. Iniciar monitoreo
+curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-id&action=start"
+
+# 4. Consultar datos cada 30 segundos
+watch -n 30 'curl -s "http://localhost:8080/readings?sensor_id=sensor-id&from=0&to=5&limit=5" | jq'
+```
+
+### Escenario 2: Sistema de Alerta Industrial
+
+```bash
+# 1. Crear sensores de presión crítica
+curl -X POST http://localhost:8080/sensors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Presión Tanque Principal",
+    "type": "pressure",
+    "device_id": "device-id",
+    "config": {
+      "sampling_rate_ms": 1000,
+      "error_rate": 0.001,
+      "enabled": true,
+      "thresholds": {"min": 950.0, "max": 1050.0}
+    }
+  }'
+
+# 2. Monitoreo de alta frecuencia
+curl -X POST "http://localhost:8080/simulator/?sensor_id=sensor-id&action=start"
+
+# 3. Verificar métricas de error
+curl http://localhost:8080/metrics | grep sensor_errors_total
+```
+
+## 🧪 Testing y Desarrollo
+
+### Ejecutar Tests
+
+```bash
+# Ejecutar todos los tests con cobertura
+make test
+
+# Ver reporte de cobertura HTML
+open coverage.html
+```
+
+### Debug y Desarrollo
+
+```bash
+# Entrar en contenedor de la app para debug
+make exec-app
+
+# Ver logs de la aplicación
+docker compose logs -f sensor-app
+
+# Ver logs de NATS
+docker compose logs -f nats
+
+# Ver logs de PostgreSQL
+docker compose logs -f postgres
+```
 
 ## 🔒 Consideraciones de Seguridad
 
-- Validación de entrada en todos los endpoints
-- Sanitización de datos de configuración
-- Manejo seguro de errores sin exposición de detalles internos
-- Rate limiting implícito mediante configuración de sensores
+- **Validación de Entrada**: Todos los endpoints validan datos de entrada
+- **Sanitización**: Datos de configuración se sanitizan antes de procesar
+- **Manejo de Errores**: Errores internos no exponen detalles sensibles
+- **Rate Limiting**: Configuración de sensores limita frecuencia de lectura
+- **Variables de Entorno**: Configuración sensible via variables de entorno
 
-## 🚀 Despliegue
+## 🔄 Flujo de Datos y Arquitectura
 
-### Docker
+### Diagrama de Arquitectura
+
+![Diagrama de arquitectura](./assets/diagram.svg)
+
+### Flujo de Simulación de Sensores
+
+1. **Configuración**: Se crea un sensor con parámetros específicos
+2. **Inicio**: El simulador inicia un goroutine con ticker
+3. **Generación**: Cada tick genera una lectura aleatoria según el tipo
+4. **Validación**: Se aplican umbrales y tasa de error
+5. **Persistencia**: La lectura se guarda en PostgreSQL
+6. **Eventos**: Se publica evento en NATS para notificar cambios
+7. **Métricas**: Se actualizan contadores de Prometheus
+
+## 🏛️ Principios de Diseño
+
+### Arquitectura Hexagonal (Clean Architecture)
+
+- **Domain Layer**: Entidades puras sin dependencias externas
+- **Application Layer**: Casos de uso y lógica de negocio
+- **Infrastructure Layer**: Implementaciones concretas (HTTP, DB, NATS)
+
+### Patrones Implementados
+
+- **Repository Pattern**: Abstracción de persistencia
+- **Use Case Pattern**: Encapsulación de lógica de negocio
+- **Event-Driven Architecture**: Comunicación asíncrona
+- **Dependency Injection**: Inversión de dependencias
+- **Factory Pattern**: Creación de entidades de dominio
+
+## 🧪 Testing y Calidad de Código
+
+### Cobertura de Tests
+
+El proyecto incluye tests unitarios completos para:
+
+- ✅ **Domain Layer**: Entidades, validaciones, reglas de negocio
+- ✅ **Application Layer**: Casos de uso con mocks
+- ✅ **Infrastructure Layer**: Repositorios y handlers HTTP
+- ✅ **Event System**: Publisher NATS y métricas Prometheus
+
+### Ejecutar Tests
 
 ```bash
-# Opción 1: Todo con Docker Compose (recomendado)
+# Ejecutar todos los tests con cobertura
+make test
+
+# Ver reporte de cobertura HTML
+open coverage.html
+
+# Ejecutar tests específicos
+go test -v ./internal/iotcontext/domain
+go test -v ./internal/iotcontext/application
+```
+
+## 🚀 Despliegue y Producción
+
+### Docker Compose (Recomendado)
+
+```bash
+# Despliegue completo
 make start-docker
 
-# Opción 2: Solo infraestructura + app en contenedor
-make infra
-make docker-build
-make docker-run
+# Verificar servicios
+docker compose ps
 
-# Opción 3: Infraestructura + app local
-make start-local
+# Ver logs
+docker compose logs -f
 ```
 
 ### Variables de Producción
 
 ```env
+# Base de datos
 POSTGRES_DSN=postgres://user:password@db:5432/iot_db?sslmode=disable
+
+# Mensajería
 NATS_URL=nats://nats:4222
+
+# Aplicación
+PORT=8080
+LOG_LEVEL=info
 ```
 
-### Comandos de Despliegue
+### Escalabilidad
 
-```bash
-# Para desarrollo local
-make start-local
-
-# Para producción con Docker
-make start-docker
-
-# Para limpiar y reiniciar
-make restart-all
-```
+- **Horizontal**: Múltiples instancias de la app
+- **NATS Clustering**: Para alta disponibilidad de mensajería
+- **PostgreSQL Replica**: Para lecturas distribuidas
+- **Load Balancer**: Para distribución de carga HTTP
 
 ## 🔧 Troubleshooting
 
 ### Problemas Comunes
 
 ```bash
-# Si la app no arranca, limpiar todo y reiniciar
-make nuke
-make start-docker
+# Sistema no arranca
+make nuke && make start-docker
 
-# Si hay problemas con la base de datos
+# Problemas de conectividad DB
 make exec-postgres
-# Dentro del contenedor: \dt (ver tablas)
+# Dentro: \dt (ver tablas), \l (ver bases de datos)
 
-# Si hay problemas con NATS
+# Problemas NATS
 make exec-nats
-# Dentro del contenedor: nats server info
+# Dentro: nats server info, nats sub "sensor.*"
 
-# Ver logs de la aplicación
+# Ver logs detallados
 docker compose logs -f sensor-app
-
-# Ver logs de infraestructura
 docker compose logs -f postgres
 docker compose logs -f nats
 ```
@@ -391,24 +545,86 @@ docker compose logs -f nats
 ### Comandos de Diagnóstico
 
 ```bash
-# Verificar que todo esté corriendo
+# Estado de servicios
 docker ps
+docker compose ps
 
-# Verificar conectividad de la app
+# Conectividad
 curl http://localhost:8080/health
-
-# Ver métricas
 curl http://localhost:8080/metrics
 
-# Entrar en la app para debug
-make exec-app
+# Base de datos
+make exec-postgres
+# \dt device_models
+# \dt sensor_models
+# \dt sensor_readings_models
+
+# NATS
+make exec-nats
+# nats sub "sensor.*"
+# nats pub "sensor.test" "hello"
 ```
 
-## 📚 Documentación Adicional
+## 📚 Documentación Técnica
 
-- [Arquitectura Hexagonal](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [NATS Documentation](https://docs.nats.io/)
-- [GORM Documentation](https://gorm.io/docs/)
+### Estructura de Base de Datos
+
+```sql
+-- Dispositivos IoT
+CREATE TABLE device_models (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Sensores
+CREATE TABLE sensor_models (
+    id UUID PRIMARY KEY,
+    device_id UUID REFERENCES device_models(id),
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    config JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Lecturas de sensores
+CREATE TABLE sensor_readings_models (
+    id UUID PRIMARY KEY,
+    sensor_id UUID REFERENCES sensor_models(id),
+    device_id UUID REFERENCES device_models(id),
+    type VARCHAR(255),
+    value FLOAT NOT NULL,
+    unit VARCHAR(50),
+    timestamp TIMESTAMP NOT NULL,
+    meta JSONB
+);
+```
+
+### Eventos NATS
+
+```go
+// Eventos publicados
+sensor.created
+sensor.config.updated
+sensor.reading.published
+simulator.started
+simulator.stopped
+simulator.error_injected
+```
+
+### Métricas Prometheus
+
+```prometheus
+# Contadores
+sensor_readings_total{sensor_type="temperature", device_id="device-123"}
+sensor_errors_total{sensor_type="humidity", device_id="device-456"}
+
+# Gauges
+active_sensors
+```
 
 ## 🤝 Contribución
 
@@ -417,6 +633,14 @@ make exec-app
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
+
+### Estándares de Código
+
+- **Go fmt**: Formateo automático
+- **Go vet**: Análisis estático
+- **Tests**: Cobertura mínima 80%
+- **Documentación**: Comentarios en funciones públicas
+- **Commits**: Mensajes descriptivos en español
 
 ## 📄 Licencia
 
@@ -429,3 +653,18 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 ---
 
 ⭐ **¡No olvides darle una estrella al proyecto si te gusta!** ⭐
+
+## 🎯 Resumen Ejecutivo
+
+Este proyecto demuestra un **sistema IoT completo** implementado en Go con:
+
+- ✅ **Arquitectura Hexagonal** para mantenibilidad
+- ✅ **Mensajería NATS** para escalabilidad
+- ✅ **Persistencia PostgreSQL** para confiabilidad
+- ✅ **Simulación en tiempo real** de sensores
+- ✅ **Métricas Prometheus** para observabilidad
+- ✅ **API REST completa** para integración
+- ✅ **Tests unitarios** para calidad
+- ✅ **Docker** para despliegue
+
+**Perfecto para evaluaciones técnicas de desarrolladores Go senior.**
