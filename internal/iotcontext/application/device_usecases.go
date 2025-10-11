@@ -9,9 +9,9 @@ type DeviceUseCase struct {
 	deviceRepo domain.DeviceRepository
 }
 
-func NewDeviceUseCase(deviceRepo *domain.DeviceRepository) *DeviceUseCase {
+func NewDeviceUseCase(deviceRepo domain.DeviceRepository) *DeviceUseCase {
 	return &DeviceUseCase{
-		deviceRepo: *deviceRepo,
+		deviceRepo: deviceRepo,
 	}
 }
 

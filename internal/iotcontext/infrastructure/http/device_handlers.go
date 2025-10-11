@@ -21,10 +21,10 @@ func NewDeviceHandlers(deviceUseCase application.DeviceUseCase) *DeviceHandlers 
 func (dh *DeviceHandlers) DevicesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		if r.URL.Path == "/devices" {
-			dh.All(w)
-		} else {
+		if r.URL.Path == "/devices?" {
 			dh.GetByID(w, r)
+		} else {
+			dh.All(w)
 		}
 	case http.MethodPost:
 		dh.Create(w, r)

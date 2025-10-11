@@ -49,7 +49,7 @@ func NewAppContainer() *AppContainer {
 
 	metics := persistence.NewPrometheusMetrics()
 
-	deviceUC := application.NewDeviceUseCase(&deviceRepo)
+	deviceUC := application.NewDeviceUseCase(deviceRepo)
 	sensorUC := application.NewSensorUseCase(sensorRepo, metics, eventPub)
 	readingsUC := application.NewReadingsUsecase(sensorReadingRepo)
 	simulatorUC := application.NewSimulatorUseCase(sensorRepo, simulatorRepo)

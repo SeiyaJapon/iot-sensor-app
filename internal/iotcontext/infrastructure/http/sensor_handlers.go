@@ -29,7 +29,9 @@ type CreateSensorRequest struct {
 func (h *SensorHandlers) SensorsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		if r.URL.Path != "/sensors" {
+		if r.URL.Path != "/sensors?" {
+			h.GetAllSensors(w)
+		} else {
 			id := r.URL.Query().Get("id")
 			if id == "" {
 				http.Error(w, "Missing sensor ID", http.StatusBadRequest)
@@ -37,8 +39,6 @@ func (h *SensorHandlers) SensorsHandler(w http.ResponseWriter, r *http.Request) 
 			}
 
 			h.GetSensorByID(w, r)
-		} else {
-			h.GetAllSensors(w)
 		}
 	case http.MethodPost:
 		h.CreateSensor(w, r)
